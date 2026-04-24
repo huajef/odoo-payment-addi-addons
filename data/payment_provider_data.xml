@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="payment_provider_addi" model="payment.provider">
+            <field name="name">Addi</field>
+            <field name="code">addi</field>
+            <field name="state">test</field>
+            <field name="is_published">True</field>
+            <field name="allow_tokenization">False</field>
+            <field name="support_manual_capture">False</field>
+            <field name="support_refund">none</field>
+            <field name="support_express_checkout">False</field>
+            <field name="payment_method_ids" eval="[(4, ref('payment_method_addi'))]"/>
+            <!-- URLs por defecto — se pueden sobreescribir en Settings -->
+            <!-- <field name="addi_auth_url">https://auth.addi.com/oauth/token</field>       --> 
+            <field name="addi_auth_url">https://auth.addi-staging.com/oauth/token</field>   
+            <field name="addi_api_url">https://api.addi.com/v1</field>
+            <field name="addi_channels_url">https://channels-public-api.addi.com</field>
+        </record>
+
+    </data>
+</odoo>

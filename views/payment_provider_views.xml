@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Hereda el formulario de configuración del proveedor de pago
+        para añadir los campos específicos de Addi.
+    -->
+    <record id="payment_provider_addi_form" model="ir.ui.view">
+        <field name="name">payment.provider.addi.form</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="Configuración Addi"
+                    name="addi_config"
+                    invisible="code != 'addi'"
+                >
+                    <group string="Credenciales OAuth2">
+                        <field name="addi_client_id"
+                               required="code == 'addi' and state != 'disabled'"
+                               password="True"/>
+                        <field name="addi_client_secret"
+                               required="code == 'addi' and state != 'disabled'"
+                               password="True"/>
+                    </group>
+                    <group string="Configuración del Aliado">
+                        <field name="addi_ally_slug"
+                               required="code == 'addi' and state != 'disabled'"/>
+                    </group>
+                    <group string="URLs de la API">
+                        <field name="addi_auth_url"/>
+                        <field name="addi_api_url"/>
+                        <field name="addi_channels_url"/>
+                    </group>
+                    <group string="Información">
+                        <div class="alert alert-info" role="alert" colspan="2">
+                            Configure en el dashboard de Addi las siguientes URLs:
+                            <ul>
+                                <li><strong>Webhook URL:</strong> https://su-dominio.com/payment/addi/webhook</li>
+                                <li><strong>Return URL:</strong> https://su-dominio.com/payment/addi/return</li>
+                            </ul>
+                        </div>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
