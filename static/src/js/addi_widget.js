@@ -1,23 +1,24 @@
 /**
- * addi_widget.js — Odoo 18 compatible (vanilla JS, no OWL imports)
- *
- * Maneja el botón "Pagar con Addi" en la página de producto.
- * No usa @odoo-module ni imports de /web/core para evitar el error
- * "Unallowed to fetch files from addon" en Odoo 18.
+ * addi_widget.js — Odoo 18 compatible (versión estable)
  *
  * Flujo:
- *   1. Click en botón → POST JSON-RPC a /payment/addi/create
- *   2. Recibe redirect_url → window.location.href
+ * 1. Click botón Addi
+ * 2. Calcula monto de forma segura
+ * 3. POST a /payment/addi/create
+ * 4. Recibe redirect_url
+ * 5. Redirige a Addi
  */
 
 (function () {
     "use strict";
 
+    console.log("[Addi] script cargado");
+
     /**
-     * Llama a un endpoint JSON-RPC de Odoo (compatible con /web/dataset/call_kw y rutas type='json').
+     * Llamada backend Odoo
      */
-    async function jsonRpc(url, params) {
-        const response = await fetch(url, {
+    async function callAddiCreate(payload) {
+        const response = await fetch("/payment/addi/create", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -26,152 +27,148 @@
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method: "call",
-                id: Math.floor(Math.random() * 1e9),
-                params: params,
+                params: payload,
+                id: Date.now(),
             }),
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error("HTTP " + response.status);
         }
 
         const data = await response.json();
 
-        if (data.error) {
-            throw new Error(data.error.data?.message || data.error.message || "RPC Error");
-        }
-
+        // Odoo JSON-RPC devuelve en result
         return data.result;
     }
 
-    /**
-     * Muestra error inline junto al botón.
-     */
-    function showError(btn, message) {
-        let errEl = btn.parentElement.querySelector(".addi-error-msg");
-        if (!errEl) {
-            errEl = document.createElement("p");
-            errEl.className = "addi-error-msg";
-            errEl.style.cssText = "color:#dc3545;font-size:0.85rem;margin-top:6px;";
-            btn.parentElement.appendChild(errEl);
+    function showError(btn, msg) {
+        let el = btn.parentElement.querySelector(".addi-error-msg");
+        if (!el) {
+            el = document.createElement("div");
+            el.className = "addi-error-msg";
+            el.style.color = "red";
+            el.style.marginTop = "6px";
+            btn.parentElement.appendChild(el);
         }
-        errEl.textContent = message;
+        el.textContent = msg;
     }
 
     function clearError(btn) {
-        const errEl = btn.parentElement && btn.parentElement.querySelector(".addi-error-msg");
-        if (errEl) errEl.remove();
+        const el = btn.parentElement.querySelector(".addi-error-msg");
+        if (el) el.remove();
     }
 
-    /**
-     * Lee el partner_id del contexto de sesión de Odoo 18.
-     * Odoo 18 lo expone en odoo.__session_info__ o en el meta tag.
-     */
     function getPartnerId() {
         try {
-            if (window.__odoo_session_info__) {
-                return window.__odoo_session_info__.partner_id || 0;
-            }
-            // fallback: leer del elemento oculto que website_sale inyecta
-            const el = document.querySelector("[data-partner-id]");
-            if (el) return parseInt(el.dataset.partnerId, 10) || 0;
-        } catch (_) {}
-        return 0;
-    }
-
-    /**
-     * Obtiene el sale_order_id activo del carrito.
-     */
-    async function getSaleOrderId() {
-        try {
-            const result = await jsonRpc("/web/dataset/call_kw", {
-                model: "sale.order",
-                method: "search_read",
-                args: [[["website_id", "!=", false], ["state", "=", "draft"]]],
-                kwargs: {
-                    fields: ["id"],
-                    limit: 1,
-                    order: "id desc",
-                    context: {},
-                },
-            });
-            return result && result.length ? result[0].id : null;
-        } catch (_) {
-            return null;
+            return window.__odoo_session_info__?.partner_id || 0;
+        } catch (e) {
+            return 0;
         }
     }
 
     /**
-     * Handler del click en el botón Addi.
+     * 🔥 FIX PRINCIPAL: obtener monto de forma robusta
+     */
+    function getCheckoutAmount(btn) {
+        // 1. Intentar dataset del botón (si existe)
+        let amount = parseFloat(btn.dataset.amount || "0");
+
+        if (amount > 0) return amount;
+
+        // 2. Intentar DOM clásico Odoo
+        const el = document.querySelector(".oe_cart_total .monetary_field");
+
+        if (el) {
+            amount = parseFloat(el.innerText.replace(/[^0-9.]/g, "")) || 0;
+        }
+
+        return amount;
+    }
+
+    /**
+     * CLICK PRINCIPAL
      */
     async function handleAddiPay(event) {
         const btn = event.currentTarget;
+
+        console.log("[Addi] click detectado");
+
         clearError(btn);
 
-        const amount = parseFloat(btn.dataset.amount || "0");
+        const amount = getCheckoutAmount(btn);
         const currencyId = parseInt(btn.dataset.currencyId || "0", 10);
 
+        console.log("[Addi] amount detectado:", amount);
+
+        // 🔥 VALIDACIÓN CORRECTA
         if (!amount || amount <= 0) {
-            showError(btn, "Monto inválido para procesar con Addi.");
+            showError(btn, "Monto inválido. Intenta recargar el carrito2.");
             return;
         }
 
         const originalText = btn.textContent;
+
         btn.disabled = true;
-        btn.textContent = "Procesando…";
+        btn.textContent = "Procesando...";
 
         try {
-            const partnerId = getPartnerId();
-            const saleOrderId = await getSaleOrderId();
-
-            const result = await jsonRpc("/payment/addi/create", {
+            const payload = {
                 amount: amount,
                 currency_id: currencyId,
-                partner_id: partnerId,
-                sale_order_id: saleOrderId,
-            });
+                partner_id: getPartnerId(),
+                sale_order_id: null,
+            };
+
+            console.log("[Addi] payload:", payload);
+
+            const result = await callAddiCreate(payload);
+
+            console.log("[Addi] respuesta backend:", result);
 
             if (!result || result.error) {
-                showError(btn, "Error Addi: " + (result ? result.error : "sin respuesta"));
-                btn.disabled = false;
-                btn.textContent = originalText;
-                return;
+                throw new Error(result?.error || "Error desconocido");
             }
 
             const redirectUrl = result.redirect_url;
+
             if (!redirectUrl) {
-                showError(btn, "No se recibió URL de Addi. Intenta de nuevo.");
-                btn.disabled = false;
-                btn.textContent = originalText;
-                return;
+                throw new Error("No se recibió redirect_url");
             }
 
-            // Redirección manual — no automática
+            console.log("[Addi] redirigiendo a:", redirectUrl);
+
             window.location.href = redirectUrl;
 
         } catch (err) {
-            console.error("[Addi] Error:", err);
-            showError(btn, "Error de conexión con Addi. Intenta nuevamente.");
+            console.error("[Addi] error:", err);
+
+            showError(btn, "Error Addi: " + err.message);
+
             btn.disabled = false;
             btn.textContent = originalText;
         }
     }
 
     /**
-     * Inicializa los botones Addi cuando el DOM esté listo.
+     * INIT seguro (espera botón dinámico Odoo)
      */
     function init() {
-        const buttons = document.querySelectorAll("[data-addi-pay='1']");
-        if (!buttons.length) return;
+        console.log("[Addi] init ejecutado");
 
-        buttons.forEach(function (btn) {
-            btn.addEventListener("click", handleAddiPay);
-        });
+        const interval = setInterval(() => {
+            const btn = document.getElementById("addi_pay_button");
 
-        console.log("[Addi] " + buttons.length + " botón(es) inicializado(s).");
+            if (btn) {
+                console.log("[Addi] botón encontrado");
+
+                btn.addEventListener("click", handleAddiPay);
+
+                clearInterval(interval);
+            }
+        }, 200);
     }
 
-    // Compatible con Odoo 18: el script se carga diferido, el DOM ya está listo.
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", init);
     } else {

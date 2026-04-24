@@ -19,7 +19,7 @@
     'assets': {
         'web.assets_frontend': [
             'payment_addi/static/src/js/addi_widget.js',
-            'payment_addi/static/src/js/payment_addi_form.js',
+            #'payment_addi/static/src/js/payment_addi_form.js',
         ],
     },
     'installable': True,

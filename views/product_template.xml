@@ -38,16 +38,31 @@
                 <div class="addi-pay-container mt-2">
                     <button
                         type="button"
-                        class="btn addi-pay-btn w-100"
+                        id="addi_pay_button"
+                        class="btn btn-primary w-100 mt-2"
+                        data-amount="50000"
+                        data-currency-id="1"
+                    >
+                        Pagar con Addi test
+                    </button>
+                </div>
+
+                <!-- 
+                <div class="addi-pay-container mt-2">
+                    <button
+                        type="button"
+                        id="addi_pay_button"
+                        class="btn btn-primary w-100 mt-2"
                         style="background-color:#f5a623;color:#fff;font-weight:600;"
-                        t-att-data-amount="product.lst_price"
-                        t-att-data-currency-id="product.currency_id.id"
+                        t-att-data-amount="order.amount_total"
+                        t-att-data-currency-id="order.currency_id.id"
                         t-att-data-product-id="product.id"
                         data-addi-pay="1"
                     >
                         Pagar con Addi
                     </button>
                 </div>
+                -->
             </t>
         </xpath>
     </template>
