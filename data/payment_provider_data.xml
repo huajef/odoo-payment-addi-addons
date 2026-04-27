@@ -11,10 +11,11 @@
             <field name="support_manual_capture">False</field>
             <field name="support_refund">none</field>
             <field name="support_express_checkout">False</field>
-            <field name="payment_method_ids" eval="[(4, ref('payment_method_addi'))]"/>
-            <!-- URLs por defecto — se pueden sobreescribir en Settings -->
-            <!-- <field name="addi_auth_url">https://auth.addi.com/oauth/token</field>       --> 
-            <field name="addi_auth_url">https://auth.addi-staging.com/oauth/token</field>   
+            <field name="payment_method_ids" eval="[Command.set([ref('payment_addi.payment_method_addi')])]"/>
+            <field name="addi_client_id"></field>
+            <field name="addi_client_secret"></field>
+            <field name="addi_ally_slug"></field>
+            <field name="addi_auth_url">https://auth.addi-staging.com/oauth/token</field>
             <field name="addi_api_url">https://api.addi.com/v1</field>
             <field name="addi_channels_url">https://channels-public-api.addi.com</field>
         </record>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Botón de Addi en el checkout -->
+    <template id="addi_payment_button" inherit_id="website_sale.payment" name="Addi - Botón en checkout">
+        <xpath expr="//h3[@class='mb-4']" position="after">
+            <!-- Debug info -->
+            <div class="alert alert-info mb-2">
+                <strong>Addi Debug:</strong> Provider=<t t-esc="addi_provider.name if addi_provider else 'None'"/> | Amount=<t t-esc="addi_amount"/>
+            </div>
+            
+            <!-- Botón de Addi -->
+            <div class="addi-pay-container mt-3 mb-3" t-if="addi_amount and addi_amount > 0">
+                <button
+                    type="button"
+                    id="addi_pay_button"
+                    class="btn btn-success w-100"
+                    t-att-data-amount="addi_amount"
+                    t-att-data-currency-id="addi_currency_id"
+                    t-att-data-partner-id="addi_partner_id"
+                    data-addi-pay="1"
+                >
+                    📱 Pagar con Addi (Cuotas sin intereses)
+                </button>
+            </div>
+        </xpath>
+    </template>
+</odoo>

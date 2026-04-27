@@ -36,12 +36,17 @@ class AddiApiService:
     def _get_access_token(self):
         """Obtiene un token JWT fresco (client_credentials).
         Se solicita uno nuevo por transacción, sin caché."""
+        if not self._client_id or not self._client_secret:
+            _logger.error("Addi: Faltan credenciales - client_id o client_secret vacíos")
+            raise ValueError("Addi: Faltan credenciales. Configura addi_client_id y addi_client_secret en el provider.")
+        
         url = self._auth_url
         payload = {
             'grant_type': 'client_credentials',
             'client_id': self._client_id,
             'client_secret': self._client_secret,
         }
+        _logger.info("Addi: Solicitando token a %s", url)
         try:
             resp = requests.post(
                 url,
@@ -50,7 +55,7 @@ class AddiApiService:
             )
             resp.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            _logger.error("Addi auth HTTP error: %s – %s", exc, exc.response.text)
+            _logger.error("Addi auth HTTP error: %s – %s", exc, exc.response.text if exc.response else "N/A")
             raise
         except requests.exceptions.RequestException as exc:
             _logger.error("Addi auth connection error: %s", exc)
@@ -59,9 +64,10 @@ class AddiApiService:
         data = resp.json()
         token = data.get('access_token')
         if not token:
+            _logger.error("Addi: No se recibió access_token. Respuesta: %s", data)
             raise ValueError(f"Addi no retornó access_token. Respuesta: {data}")
 
-        _logger.debug("Addi: token obtenido correctamente.")
+        _logger.info("Addi: Token obtenido correctamente")
         return token
 
     def _auth_headers(self):

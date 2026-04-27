@@ -1,75 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!--
-        Widget de Addi en la página de producto.
-        Se hereda de website_sale.product y se inserta el bloque
-        justo debajo del precio del producto.
-
-        La sección está envuelta en t-if para que sólo aparezca
-        cuando el proveedor Addi esté activo.
-    -->
-    <template
-        id="addi_widget_product"
-        inherit_id="website_sale.product"
-        name="Addi – Widget en producto"
-    >
-        <!--
-            Insertar después del bloque de precio (#product_price).
-            Usamos un selector CSS robusto que existe en Odoo 18.
-        -->
+    <!-- Widget y botón en página de producto -->
+    <template id="addi_widget_product" inherit_id="website_sale.product" name="Addi - Widget en producto">
         <xpath expr="//div[@id='product_details']" position="inside">
-            <t t-if="addi_provider and addi_provider.state in ('enabled', 'test') and addi_provider.addi_ally_slug">
-                <!-- Script del widget de Addi (se carga una sola vez) -->
-                <script
-                    src="https://s3.amazonaws.com/widgets.addi.com/bundle.min.js"
-                    type="text/javascript"
-                    defer="defer"
-                />
-
-                <!-- Contenedor del widget -->
-                <div class="addi-widget-container mt-3">
-                    <addi-widget
-                        t-att-price="product.lst_price"
-                        t-att-ally-slug="addi_provider.addi_ally_slug"
-                    />
-                </div>
-
-                <!-- Botón de pago con Addi -->
-                <div class="addi-pay-container mt-2">
-                    <button
-                        type="button"
-                        id="addi_pay_button"
-                        class="btn btn-primary w-100 mt-2"
-                        data-amount="50000"
-                        data-currency-id="1"
-                    >
-                        Pagar con Addi test
-                    </button>
-                </div>
-
-                <!-- 
-                <div class="addi-pay-container mt-2">
-                    <button
-                        type="button"
-                        id="addi_pay_button"
-                        class="btn btn-primary w-100 mt-2"
-                        style="background-color:#f5a623;color:#fff;font-weight:600;"
-                        t-att-data-amount="order.amount_total"
-                        t-att-data-currency-id="order.currency_id.id"
-                        t-att-data-product-id="product.id"
-                        data-addi-pay="1"
-                    >
-                        Pagar con Addi
-                    </button>
-                </div>
-                -->
-            </t>
+            <!-- Widget visual de Addi (de la documentación) -->
+            <addi-widget
+                t-att-price="addi_amount"
+                t-att-ally-slug="addi_provider.addi_ally_slug if addi_provider and addi_provider.addi_ally_slug else 'tu-ally-slug'"
+                class="mb-3 d-block"
+            />
+            
+            <!-- Botón de pago directo -->
+            <div class="addi-pay-container mt-2" t-if="addi_amount and addi_amount > 0">
+                <button
+                    type="button"
+                    id="addi_pay_button"
+                    class="btn btn-primary w-100"
+                    t-att-data-amount="addi_amount"
+                    t-att-data-currency-id="addi_currency_id"
+                    t-att-data-partner-id="addi_partner_id"
+                    data-addi-pay="1"
+                >
+                    Pagar con Addi
+                </button>
+            </div>
         </xpath>
     </template>
-
-    <!--
-        Inyectar la variable addi_provider en el contexto del template.
-        Se sobreescribe el método get_sale_product_domain desde el
-        controlador de website_sale o se usa un QWeb ir.ui.view global.
-    -->
 </odoo>

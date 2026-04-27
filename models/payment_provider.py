@@ -74,6 +74,13 @@ class PaymentProvider(models.Model):
     def _addi_make_payment_url(self, tx):
         """Llama a la API de Addi y retorna la URL de redirección."""
         self.ensure_one()
+        
+        _logger.info("🔥 ADDI PROVIDER - Iniciando _addi_make_payment_url")
+        _logger.info("🔥 ADDI PROVIDER - addi_client_id: %s", self.addi_client_id)
+        _logger.info("🔥 ADDI PROVIDER - addi_ally_slug: %s", self.addi_ally_slug)
+        _logger.info("🔥 ADDI PROVIDER - addi_auth_url: %s", self.addi_auth_url)
+        _logger.info("🔥 ADDI PROVIDER - addi_api_url: %s", self.addi_api_url)
+        
         service = AddiApiService(self)
 
         # Datos de la orden de venta vinculada
